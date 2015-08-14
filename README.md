@@ -34,7 +34,7 @@ Once you are sure that VirtualBox and Vagrant are installed correctly execute th
 
 	git clone https://github.com/alinr/Udacity_FSWDN_P3_Item_Catalog.git
 	cd Udacity_FSWDN_P3_Item_Catalog
-	cd vagrant
+	cd catalog
 
 ### Verify that these files exist in the newly cloned repository:
 
@@ -66,8 +66,7 @@ Once you are sure that VirtualBox and Vagrant are installed correctly execute th
 
 ### Enter the Catalog
 
-	cd /
-	cd vagrant
+	cd /vagrant
 	cd catalog
 
 ### Initialize the database
@@ -81,6 +80,7 @@ Once you are sure that VirtualBox and Vagrant are installed correctly execute th
 ### Google Client ID & Secret
 
 As the app uses Google for authentication, the next step you have to obtain a client id and client secret from Google:
+
 1. Go to the [Google Developer Console](https://console.developers.google.com/project).
 2. Create a new project.
 3. Go to **APIs & auth - Consent screen** and select a valid Email address.
@@ -90,6 +90,7 @@ As the app uses Google for authentication, the next step you have to obtain a cl
 ### Facebook Client ID & Secret
 
 As the app uses also Facebook for authentication, the next step you have to obtain a client id and client secret from Facebook:
+
 1. Go to the [Facebook Developer](https://developers.facebook.com/apps/).
 2. Create a new app (www - website).
 3. Get the App ID & App Secret
