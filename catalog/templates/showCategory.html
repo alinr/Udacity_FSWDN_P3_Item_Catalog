@@ -1,6 +1,13 @@
 {% extends "base/layout.html" %}
 {% block title %}{{ category.name }}{% endblock %}
-{% block header %}{{ category.name }} Items ({{ count_items }} {% if count_items == 1 %}item{% else %}items{% endif %}){% endblock %}
+{% block header %}
+    {{ category.name }} Items ({{ count_items }} {% if count_items == 1 %}item{% else %}items{% endif %})
+    {% if 'username' in session  %}
+        <a href="{{ url_for('editCategory', category_id=category.id) }}">Edit</a>
+        &bull;
+        <a href="{{ url_for('deleteCategory', category_id=category.id) }}">Delete</a>
+    {% endif%}
+{% endblock %}
 {% block content %}
 
     {% if items %}

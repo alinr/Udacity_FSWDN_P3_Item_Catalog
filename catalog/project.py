@@ -1,6 +1,7 @@
 import os
 import base64
 
+from functools import wraps
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
@@ -41,6 +42,16 @@ Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in login_session:
+            return redirect(url_for('showLogin', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 
 # Testing
@@ -95,16 +106,11 @@ def showItem(category_id, item_id):
                            category=category, item=item)
 
 
-
-
-
 # Edit routes for categories
 @app.route('/category/new/', methods=['GET', 'POST'])
+@login_required
 def newCategory():
     """ Create new category """
-    # Check if user already logged in, else redirect to login form
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
         newCategory = Category(name=request.form['category_name'])
         session.add(newCategory)
@@ -116,41 +122,84 @@ def newCategory():
 
 
 @app.route('/category/<int:category_id>/edit/', methods=['GET', 'POST'])
+@login_required
 def editCategory(category_id):
     """ Edit category
      Args:
         category_id: the id of the category
     """
-    if 'username' not in login_session:
-        return redirect('/login')
-    # ToDo: Edit template and functionality
+
+    categories = session.query(Category).all()
+    category = session.query(Category).filter_by(id=category_id).one()
+
+    if request.method == 'POST':
+
+        nonce = request.form['nonce'].strip()
+
+        # Check if nonce is set correct
+        if not useNonce(nonce):
+            flash("An error occurred. Please try again.", "danger")
+            return render_template('forms/editCategory.html',
+                                   categories=categories,
+                                   category=category,
+                                   nonce=createNonce())
+
+        category.name = request.form['category_name'].strip()
+        category.description = request.form['category_description'].strip()
+        session.add(category)
+        flash('Category %s successfully updated.' % category.name)
+        session.commit()
+        return redirect(url_for('home'))
+    else:
+        return render_template('forms/editCategory.html',
+                               categories=categories,
+                               category=category,
+                               nonce=createNonce())
 
 
 @app.route('/category/<int:category_id>/delete/', methods=['GET', 'POST'])
+@login_required
 def deleteCategory(category_id):
     """ Delete category
      Args:
         category_id: the id of the category
     """
-    if 'username' not in login_session:
-        return redirect('/login')
-    # ToDo: Delete template and functionality
 
+    categories = session.query(Category).all()
+    category = session.query(Category).filter_by(id=category_id).one()
 
+    if request.method == 'POST':
+
+        nonce = request.form['nonce'].strip()
+
+        # Check if nonce is set correct
+        if not useNonce(nonce):
+            flash("An error occurred. Please try again.", "danger")
+            return render_template('forms/deleteCategory.html',
+                                   categories=categories,
+                                   category=category,
+                                   nonce=createNonce())
+
+        session.delete(category)
+        flash('%s Successfully Deleted' % category.name)
+        session.commit()
+        return home()
+    else:
+        return render_template('forms/deleteCategory.html',
+                               categories=categories,
+                               category=category,
+                               nonce=createNonce())
 
 
 # Edit routes for items
 @app.route('/item/new/', methods=['GET', 'POST'])
 @app.route('/item/new/category/<int:category_id>', methods=['GET', 'POST'])
+@login_required
 def newItem(category_id=''):
     """ Create new item
     Args:
         category_id: (optional) the id of the category
     """
-
-    # Check if user already logged in, else redirect to login form
-    if 'username' not in login_session:
-        return redirect('/login')
 
     categories = session.query(Category).all()
 
@@ -235,6 +284,7 @@ def newItem(category_id=''):
 
 
 @app.route('/item/<int:item_id>/edit/', methods=['GET', 'POST'])
+@login_required
 def editItem(item_id):
     """ Edit item
     Args:
@@ -242,10 +292,6 @@ def editItem(item_id):
     """
     categories = session.query(Category).all()
     item = session.query(Item).get(item_id)
-
-    # Check if user already logged in, else redirect to login form
-    if 'username' not in login_session:
-        return redirect('/login')
 
     # Check if item is property of the logged in user
     if item.user_id != login_session['user_id']:
@@ -331,19 +377,16 @@ def editItem(item_id):
 
 
 @app.route('/item/<int:item_id>/delete/', methods=['GET', 'POST'])
+@login_required
 def deleteItem(item_id):
     """ Delete item
     Args:
         item_id: the id of the item
     """
-    categories = session.query(Category).all()
 
+    categories = session.query(Category).all()
     itemToDelete = session.query(
         Item).filter_by(id=item_id).one()
-
-    # Check if user already logged in, else redirect to login form
-    if 'username' not in login_session:
-        return redirect('/login')
 
     # Check if item is property of the logged in user
     if itemToDelete.user_id != login_session['user_id']:
@@ -797,6 +840,11 @@ def useNonce(nonce):
         return True
     except Exception:
         return False
+
+
+
+
+
 
 
 
